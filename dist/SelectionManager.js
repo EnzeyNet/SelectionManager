@@ -1,7 +1,7 @@
 (function (angular) {
     "use strict";
 
-	var onSelectionEvent = 'nzSelection';
+	var trackSelectionEvent = 'nzTrackSelection';
 	var onSelectEvent = 'nzSelect';
 	var onDeselectEvent = 'nzDeselect';
 	var directives = angular.module('net.enzey.selection-manager', []);
@@ -66,11 +66,15 @@
 							selectionClassCtrl.selectionObj = selectableObj;
 						}
 
+						selectionManagerCtrl.addSelectable(element, selectableObj);
 						element.on('click', function(event) {
 							if (event.ctrlKey) {
-								selectionManagerCtrl.toggleSelect(selectableObj);
+								selectionManagerCtrl.toggleSelect(element);
+							} else if (event.shiftKey) {
+								selectionManagerCtrl.selectRangeFromLast(element);
+								event.preventDefault();
 							} else {
-								selectionManagerCtrl.setSelection(selectableObj);
+								selectionManagerCtrl.setSelection(element);
 							}
 
 							scope.$apply();
@@ -90,6 +94,12 @@
 				var selectionManagerCtrl;
 				selectionManagerCtrl = {
 					scope: $scope,
+					allSelectableElements: [],
+					allSelectables: [],
+					addSelectable: function(element, selectable) {
+						selectionManagerCtrl.allSelectableElements.push(element);
+						selectionManagerCtrl.allSelectables.push(selectable);
+					},
 					isSelected: function(selected) {
 						if (selectionManagerCtrl.isMultiSelect) {
 							return selectionManagerCtrl.getSelection().indexOf(selected) > -1;
@@ -97,22 +107,26 @@
 							return selectionManagerCtrl.getSelection() === selected;
 						}
 					},
-					setSelection: function(selected) {
+					setSelection: function(selectedElement) {
+						selectionManagerCtrl.lastSelectedIndex = selectionManagerCtrl.allSelectableElements.indexOf(selectedElement);
+						var selectedObj = selectionManagerCtrl.allSelectables[selectionManagerCtrl.lastSelectedIndex];
 						var currentSelections = selectionManagerCtrl.getSelection();
 						if (selectionManagerCtrl.isMultiSelect) {
 							currentSelections.length = 0;
-							currentSelections.push(selected);
+							currentSelections.push(selectedObj);
 						} else {
-							currentSelections = selected;
+							currentSelections = selectedObj;
 						}
 						selectionManagerCtrl.updateSelectionModel(currentSelections);
 					},
-					toggleSelect: function(selected) {
+					toggleSelect: function(selectedElement) {
+						selectionManagerCtrl.lastSelectedIndex = selectionManagerCtrl.allSelectableElements.indexOf(selectedElement);
+						var selectedObj = selectionManagerCtrl.allSelectables[selectionManagerCtrl.lastSelectedIndex];
 						var currentSelections = selectionManagerCtrl.getSelection();
 						if (selectionManagerCtrl.isMultiSelect) {
-							var indexOfData = currentSelections.indexOf(selected);
+							var indexOfData = currentSelections.indexOf(selectedObj);
 							if (indexOfData === -1) {
-								currentSelections.push(selected);
+								currentSelections.push(selectedObj);
 							} else {
 								currentSelections.splice(indexOfData,1);
 							}
@@ -123,6 +137,25 @@
 							}
 						}
 						selectionManagerCtrl.updateSelectionModel(currentSelections);
+					},
+					selectRangeFromLast: function(selectedElement) {
+						if (selectionManagerCtrl.isMultiSelect && selectionManagerCtrl.lastSelectedIndex !== undefined && selectionManagerCtrl.lastSelectedIndex !== null) {
+							var currectSelectedIndex = selectionManagerCtrl.allSelectableElements.indexOf(selectedElement);
+							if (Math.min(selectionManagerCtrl.lastSelectedIndex, currectSelectedIndex) === currectSelectedIndex) {
+								// Selected Elements Above Last Selected
+							} else {
+								// Selected Elements Below Last Selected
+								currectSelectedIndex++;
+								selectionManagerCtrl.lastSelectedIndex++;
+							}
+
+							var selectedSpan = selectionManagerCtrl.allSelectableElements.slice(Math.min(selectionManagerCtrl.lastSelectedIndex, currectSelectedIndex), Math.max(selectionManagerCtrl.lastSelectedIndex, currectSelectedIndex));
+							selectedSpan.forEach(function(selected) {
+								selectionManagerCtrl.toggleSelect(selected);
+							});
+						} else {
+							selectionManagerCtrl.setSelection(selectedElement);
+						}
 					}
 				};
 				return selectionManagerCtrl;
