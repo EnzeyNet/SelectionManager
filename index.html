@@ -1,0 +1,45 @@
+<html ng-app="net.enzey.example">
+	<head>
+		<title>Selection Manager Example</title>
+		<style>
+			[ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
+				display: none !important;
+			}
+		</style>
+		<style>
+			.scrolling {
+				height: 100%;
+				overflow: auto;
+			}
+			.selection {
+				background-color: lightblue;
+			}
+			.selection2 {
+				background-color: blue;
+			}
+			.flyoutLabel {
+				width: 50px;
+			}
+		</style>
+
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.0-beta.17/angular.js"></script>
+		<script src="dist/SelectionManager.js"></script>
+		<script src="example.js"></script>
+
+	</head>
+	<body ng-controller="selectionManagerCtrl">
+
+		<div nz-selection-manager="selection" nz-multi-select>
+			<ul ng-repeat="item in itemList">
+				<li nz-selection-class="selection" nz-selectable="item"><span>{{item.text}}</span></li>
+			</ul>
+		</div>
+
+			<div>
+				<p>Selection</p>
+				<ul ng-repeat="item in selection">
+					<li>{{item.text}}</li>
+				</ul>
+			</div>
+	</body>
+</html>
