@@ -68,13 +68,16 @@
 
 						selectionManagerCtrl.addSelectable(element, selectableObj);
 						element.on('click', function(event) {
+							event.preventDefault();
+							event.stopPropagation();
 							if (event.ctrlKey) {
 								selectionManagerCtrl.toggleSelect(element);
 							} else if (event.shiftKey) {
 								selectionManagerCtrl.selectRangeFromLast(element);
 								event.preventDefault();
 							} else {
-								selectionManagerCtrl.setSelection(element);
+								selectionManagerCtrl.clearSelection();
+								selectionManagerCtrl.setSelected(element);
 							}
 
 							scope.$apply();
@@ -107,12 +110,11 @@
 							return selectionManagerCtrl.getSelection() === selected;
 						}
 					},
-					setSelection: function(selectedElement) {
+					setSelected: function(selectedElement) {
 						selectionManagerCtrl.lastSelectedIndex = selectionManagerCtrl.allSelectableElements.indexOf(selectedElement);
 						var selectedObj = selectionManagerCtrl.allSelectables[selectionManagerCtrl.lastSelectedIndex];
 						var currentSelections = selectionManagerCtrl.getSelection();
 						if (selectionManagerCtrl.isMultiSelect) {
-							currentSelections.length = 0;
 							currentSelections.push(selectedObj);
 						} else {
 							currentSelections = selectedObj;
@@ -140,22 +142,21 @@
 					},
 					selectRangeFromLast: function(selectedElement) {
 						if (selectionManagerCtrl.isMultiSelect && selectionManagerCtrl.lastSelectedIndex !== undefined && selectionManagerCtrl.lastSelectedIndex !== null) {
+							var selectedIndex = selectionManagerCtrl.lastSelectedIndex;
 							var currectSelectedIndex = selectionManagerCtrl.allSelectableElements.indexOf(selectedElement);
-							if (Math.min(selectionManagerCtrl.lastSelectedIndex, currectSelectedIndex) === currectSelectedIndex) {
-								// Selected Elements Above Last Selected
-							} else {
-								// Selected Elements Below Last Selected
-								currectSelectedIndex++;
-								selectionManagerCtrl.lastSelectedIndex++;
-							}
 
-							var selectedSpan = selectionManagerCtrl.allSelectableElements.slice(Math.min(selectionManagerCtrl.lastSelectedIndex, currectSelectedIndex), Math.max(selectionManagerCtrl.lastSelectedIndex, currectSelectedIndex));
+							selectionManagerCtrl.clearSelection();
+							var selectedSpan = selectionManagerCtrl.allSelectableElements.slice(Math.min(selectionManagerCtrl.lastSelectedIndex, currectSelectedIndex), Math.max(selectionManagerCtrl.lastSelectedIndex, currectSelectedIndex) + 1);
 							selectedSpan.forEach(function(selected) {
-								selectionManagerCtrl.toggleSelect(selected);
+								selectionManagerCtrl.setSelected(selected);
 							});
+							selectionManagerCtrl.lastSelectedIndex = selectedIndex;
 						} else {
-							selectionManagerCtrl.setSelection(selectedElement);
+							selectionManagerCtrl.setSelected(selectedElement);
 						}
+					},
+					clearSelection: function() {
+						selectionManagerCtrl.getSelection().length = 0;
 					}
 				};
 				return selectionManagerCtrl;
