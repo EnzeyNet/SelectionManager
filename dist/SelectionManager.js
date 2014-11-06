@@ -13,7 +13,7 @@
 			selectionClass = _selectionClass;
 		};
 
-		this.$get = function($log) {
+		this.$get = function() {
 			return {
 				getSelectionClass: function() {
 					return selectionClass;
