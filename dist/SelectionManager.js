@@ -4,9 +4,25 @@
 	var trackSelectionEvent = 'nzTrackSelection';
 	var onSelectEvent = 'nzSelect';
 	var onDeselectEvent = 'nzDeselect';
-	var directives = angular.module('net.enzey.selection-manager', []);
+	var module = angular.module('net.enzey.selection-manager', []);
 
-	directives.directive('nzSelectionClass', function ($parse) {
+	module.provider('nzSelectionManagerConfig', function () {
+		var selectionClass = null;
+
+		this.setSelectionClass = function(_selectionClass) {
+			selectionClass = _selectionClass;
+		};
+
+		this.$get = function($log) {
+			return {
+				getSelectionClass: function() {
+					return selectionClass;
+				}
+			};
+		};
+	});
+
+	module.directive('nzSelectionClass', function (nzSelectionManagerConfig) {
 		return {
 			controller: function($scope) {
 				return {};
@@ -25,6 +41,9 @@
 						var selectionManagerCtrl = controllers[1];
 
 						var selectionClass = $attrs[directiveName];
+						if (!selectionClass) {
+							selectionClass = nzSelectionManagerConfig.getSelectionClass();
+						}
 						var selectionObj = selectionClassCtrl.selectionObj;
 						var applyClass = function() {
 							if (selectionManagerCtrl.isSelected(selectionObj)) {
@@ -50,7 +69,7 @@
         };
 	});
 
-    directives.directive('nzSelectable', function ($parse) {
+    module.directive('nzSelectable', function ($parse) {
         return {
 			require: ['?^nzSelectionClass', '^nzSelectionManager', '?^ngRepeat'],
 			compile: function ($element, $attrs) {
@@ -90,7 +109,7 @@
         };
     });
 
-    directives.directive('nzSelectionManager', function ($parse, $document, $timeout) {
+    module.directive('nzSelectionManager', function ($parse, $document, $timeout) {
         return {
 			require: 'nzSelectionManager',
 			controller: function($scope) {
