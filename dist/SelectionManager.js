@@ -22,11 +22,11 @@
 		};
 	});
 
-	module.directive('nzSelectionClass', function (nzSelectionManagerConfig) {
+	module.directive('nzSelectionClass', ['nzSelectionManagerConfig', function (nzSelectionManagerConfig) {
 		return {
-			controller: function($scope) {
+			controller: ['$scope', function($scope) {
 				return {};
-			},
+			}],
 			require: ['nzSelectionClass', '^nzSelectionManager'],
 			compile: function ($element, $attrs) {
 				var directiveName = this.name;
@@ -67,9 +67,9 @@
 				}
 			}
         };
-	});
+	}]);
 
-    module.directive('nzSelectable', function ($parse) {
+    module.directive('nzSelectable', ['$parse', function ($parse) {
         return {
 			require: ['?^nzSelectionClass', '^nzSelectionManager', '?^ngRepeat'],
 			compile: function ($element, $attrs) {
@@ -107,12 +107,12 @@
 				}
 			}
         };
-    });
+    }]);
 
-    module.directive('nzSelectionManager', function ($parse, $document, $timeout) {
+    module.directive('nzSelectionManager', ['$parse', '$document', '$timeout', function ($parse, $document, $timeout) {
         return {
 			require: 'nzSelectionManager',
-			controller: function($scope) {
+			controller: ['$scope', function($scope) {
 				var selectionManagerCtrl;
 				selectionManagerCtrl = {
 					scope: $scope,
@@ -179,7 +179,7 @@
 					}
 				};
 				return selectionManagerCtrl;
-			},
+			}],
 			compile: function ($element, $attrs) {
 				var directiveName = this.name;
 				var modelLocation = $attrs[directiveName];
@@ -232,6 +232,6 @@
 
 			}
         };
-    });
+    }]);
 
 })(angular);
