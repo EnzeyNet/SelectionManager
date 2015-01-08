@@ -10,21 +10,79 @@
 
 	module.provider('nzSelectionManagerConfig', function () {
 		var selectionClass = null;
+		var softSelectionClass = null;
 
 		this.setSelectionClass = function(_selectionClass) {
 			selectionClass = _selectionClass;
+		};
+		this.setSoftSelectionClass = function(_selectionClass) {
+			softSelectionClass = _selectionClass;
 		};
 
 		this.$get = function() {
 			return {
 				getSelectionClass: function() {
 					return selectionClass;
+				},
+				getSoftSelectionClass: function() {
+					return softSelectionClass;
 				}
 			};
 		};
 	});
 
-	module.directive('nzSelectionClass', function (nzSelectionManagerConfig) {
+	module.service('nzSelectionClassApplier', function(nzSelectionManagerConfig) {
+		return {
+			applySoftSelectionClass: function(selectionManagerCtrl, element, selectionObj, selectionClass) {
+				if (!selectionClass) {selectionClass = nzSelectionManagerConfig.getSoftSelectionClass()}
+
+				if (selectionManagerCtrl.getSoftSelection() === selectionObj) {
+					element.addClass(selectionClass);
+				} else {
+					element.removeClass(selectionClass);
+				}
+			},
+			applySelectionClass: function(selectionManagerCtrl, element, selectionObj, selectionClass) {
+				if (!selectionClass) {selectionClass = nzSelectionManagerConfig.getSelectionClass()}
+
+				if (selectionManagerCtrl.isSelected(selectionObj)) {
+					element.addClass(selectionClass);
+				} else {
+					element.removeClass(selectionClass);
+				}
+			},
+			addSoftSelectionEvents: function(scope, element, selectionObj, selectionClass) {
+				if (!selectionClass) {selectionClass = nzSelectionManagerConfig.getSoftSelectionClass()}
+
+				scope.$on(onSoftSelectEvent,  function(event, data) {
+					if (data === selectionObj) {
+						element.addClass(selectionClass);
+					}
+				});
+				scope.$on(onSoftDeselectEvent,  function(event, data) {
+					if (data === selectionObj) {
+						element.removeClass(selectionClass);
+					}
+				});
+			},
+			addSelectionEvents: function(scope, element, selectionObj, selectionClass) {
+				if (!selectionClass) {selectionClass = nzSelectionManagerConfig.getSelectionClass()}
+
+				scope.$on(onSelectEvent,  function(event, data) {
+					if (data === selectionObj) {
+						element.addClass(selectionClass);
+					}
+				});
+				scope.$on(onDeselectEvent,  function(event, data) {
+					if (data === selectionObj) {
+						element.removeClass(selectionClass);
+					}
+				});
+			}
+		};
+	});
+
+	module.directive('nzSelectionClass', function (nzSelectionClassApplier) {
 		return {
 			restrict: 'A',
 			controller: function($scope) {
@@ -43,36 +101,16 @@
 						var selectionClassCtrl = controllers[0];
 						var selectionManagerCtrl = controllers[1];
 
-						var selectionClass = $attrs[directiveName];
-						if (!selectionClass) {
-							selectionClass = nzSelectionManagerConfig.getSelectionClass();
-						}
 						var selectionObj = selectionClassCtrl.selectionObj;
-						var applyClass = function() {
-							if (selectionManagerCtrl.isSelected(selectionObj)) {
-								element.addClass(selectionClass);
-							} else {
-								element.removeClass(selectionClass);
-							}
-						};
-						applyClass();
-						scope.$on(onSelectEvent,  function(event, data) {
-							if (data === selectionObj) {
-								element.addClass(selectionClass);
-							}
-						});
-						scope.$on(onDeselectEvent,  function(event, data) {
-							if (data === selectionObj) {
-								element.removeClass(selectionClass);
-							}
-						});
+						nzSelectionClassApplier.applySelectionClass(selectionManagerCtrl, element, selectionObj, $attrs[directiveName]);
+						nzSelectionClassApplier.addSelectionEvents(scope, element, selectionObj, $attrs[directiveName]);
 					}
 				}
 			}
         };
 	});
 
-	module.directive('nzSoftSelectionClass', function (nzSelectionManagerConfig) {
+	module.directive('nzSoftSelectionClass', function (nzSelectionClassApplier) {
 		return {
 			restrict: 'A',
 			controller: function($scope) {
@@ -91,39 +129,29 @@
 						var selectionClassCtrl = controllers[0];
 						var selectionManagerCtrl = controllers[1];
 
-						var selectionClass = $attrs[directiveName];
-						if (!selectionClass) {
-							selectionClass = nzSelectionManagerConfig.getSoftSelectionClass();
-						}
 						var selectionObj = selectionClassCtrl.selectionObj;
-						var applyClass = function() {
-							if (selectionManagerCtrl.isSelected(selectionObj)) {
-								element.addClass(selectionClass);
-							} else {
-								element.removeClass(selectionClass);
-							}
-						};
-						applyClass();
-						scope.$on(onSoftSelectEvent,  function(event, data) {
-							if (data === selectionObj) {
-								element.addClass(selectionClass);
-							}
-						});
-						scope.$on(onSoftDeselectEvent,  function(event, data) {
-							if (data === selectionObj) {
-								element.removeClass(selectionClass);
-							}
-						});
+						nzSelectionClassApplier.applySoftSelectionClass(selectionManagerCtrl, element, selectionObj, $attrs[directiveName]);
+						nzSelectionClassApplier.addSoftSelectionEvents(scope, element, selectionObj, $attrs[directiveName]);
 					}
 				}
 			}
         };
 	});
 
-    module.directive('nzSelectable', function ($parse) {
+    module.directive('nzSelectable', function ($parse, nzSelectionClassApplier) {
         return {
 			restrict: 'A',
-			require: ['?^nzSelectionClass', '?^nzSoftSelectionClass', '^nzSelectionManager'],
+			controller: function($scope) {
+				var ctrl;
+				ctrl = {
+					getSelectionObject: function() {
+						return ctrl.selectionObj;
+					}
+				};
+
+				return ctrl;
+			},
+			require: ['?^nzSelectionClass', '?^nzSoftSelectionClass', '^nzSelectionManager', 'nzSelectable'],
 			compile: function ($element, $attrs) {
 				var directiveName = this.name;
 				var parsedModelAttr = $parse($attrs[directiveName]);
@@ -132,30 +160,36 @@
 						var selectionClassCtrl = controllers[0];
 						var selectionSoftClassCtrl = controllers[1];
 						var selectionManagerCtrl = controllers[2];
+						var selectableCtrl = controllers[3];
 
 						var selectableObj = parsedModelAttr(scope);
+						selectableCtrl.selectionObj = selectableObj;
+
 						if (selectionClassCtrl) {
 							selectionClassCtrl.selectionObj = selectableObj;
-						}
-						if (selectionSoftClassCtrl) {
-							selectionSoftClassCtrl.selectionObj = selectableObj;
+						} else {
+							nzSelectionClassApplier.applySelectionClass(selectionManagerCtrl, element, selectableObj);
+							nzSelectionClassApplier.addSelectionEvents(scope, element, selectableObj);
 						}
 
-						selectionManagerCtrl.addSelectable(element[0], selectableObj);
+						if (selectionSoftClassCtrl) {
+							selectionSoftClassCtrl.selectionObj = selectableObj;
+						} else {
+							nzSelectionClassApplier.applySoftSelectionClass(selectionManagerCtrl, element, selectableObj);
+							nzSelectionClassApplier.addSoftSelectionEvents(scope, element, selectableObj);
+						}
+
 						element.on('click', function(event) {
 							event.preventDefault();
 							event.stopPropagation();
 							if (event.ctrlKey) {
-								selectionManagerCtrl.toggleSelected(element[0]);
-								selectionManagerCtrl.setSoftSelection(element[0]);
+								selectionManagerCtrl.addSelected(element[0], true);
 							} else if (event.shiftKey) {
-								selectionManagerCtrl.selectRangeFromLast(element[0]);
-								selectionManagerCtrl.setSoftSelection(element[0]);
+								selectionManagerCtrl.rangeSelectFromLast(element[0]);
 								event.preventDefault();
 							} else {
 								selectionManagerCtrl.clearSelection();
-								selectionManagerCtrl.addSelected(element[0]);
-								selectionManagerCtrl.setSoftSelection(element[0]);
+								selectionManagerCtrl.addSelected(element[0], false);
 							}
 
 							scope.$apply();
@@ -172,8 +206,12 @@
         return {
 			restrict: 'A',
 			require: 'nzSelectionManager',
-			controller: function($scope, $timeout) {
+			controller: function($scope, $timeout, $element, $attrs) {
 				var selectionManagerCtrl;
+
+				var isMultiSelect = angular.isDefined($attrs.nzMultiSelect);
+				var lastSelectedElement = null;
+				var lastSoftSelectedElement = null;
 
 				var updateSelection = function (value) {
 					if (selectionManagerCtrl._locationOfSelection) {
@@ -192,20 +230,27 @@
 
 				selectionManagerCtrl = {
 					scope: $scope,
-					allSelectableElements: [],
-					allSelectables: [],
-					_locationOfSelection: null,
+					_locationOfSelection: angular.isDefined($attrs.ngModel) ? $parse($attrs.ngModel) : null,
 					_locationOfSoftSelection: null,
-					getElementFromObj: function(selectionObj) {
-						var selectedIndex = selectionManagerCtrl.allSelectables.indexOf(selectionObj);
-						return selectionManagerCtrl.allSelectableElements[selectedIndex];
+					getAllSelectables: function() {
+						var results = [];
+						var selectableElems = $element[0].querySelectorAll('*[nz-selectable], *[data-nz-selectable]');
+						for (var i = 0; i < selectableElems.length; i++) {
+							results.push(selectableElems[i]);
+						}
+						return results;
+					},
+					toggleSoftSelectAsSelected: function() {
+						if (lastSoftSelectedElement && $document[0].contains(lastSoftSelectedElement)) {
+							selectionManagerCtrl.addSelected(lastSoftSelectedElement, true);
+						}
 					},
 					getSelection: function() {
 						var selection = selectionManagerCtrl._selection;
 						if (selectionManagerCtrl._locationOfSelection) {
 							selection = selectionManagerCtrl._locationOfSelection($scope);
 						}
-						if (selectionManagerCtrl.isMultiSelect && !selection) {
+						if (isMultiSelect && !selection) {
 							selection = [];
 						}
 
@@ -220,89 +265,130 @@
 						return softSelection;
 					},
 					setSoftSelection: function(selectedElement) {
-						var selectedIndex = selectionManagerCtrl.allSelectableElements.indexOf(selectedElement);
-						var selectedObj = selectionManagerCtrl.allSelectables[selectedIndex];
-						updateSoftSelection(selectedObj);
-					},
-					addSelectable: function(element, selectable) {
-						selectionManagerCtrl.allSelectableElements.push(element);
-						selectionManagerCtrl.allSelectables.push(selectable);
+						lastSoftSelectedElement = selectedElement;
+						selectedElement = angular.element(selectedElement);
+						var selectableCtrl = selectedElement.controller('nzSelectable');
+						if (selectableCtrl) {
+							updateSoftSelection(selectableCtrl.getSelectionObject());
+						}
 					},
 					isSelected: function(selectionObj) {
-						if (selectionManagerCtrl.isMultiSelect) {
+						if (isMultiSelect) {
 							return selectionManagerCtrl.getSelection().indexOf(selectionObj) > -1;
 						} else {
 							return selectionManagerCtrl.getSelection() === selectionObj;
 						}
 					},
-					addSelected: function(selectedElement) {
-						selectionManagerCtrl.lastSelectedElement = selectedElement;
-						var selectedIndex = selectionManagerCtrl.allSelectableElements.indexOf(selectedElement);
-						var selectedObj = selectionManagerCtrl.allSelectables[selectedIndex];
-						var currentSelections = selectionManagerCtrl.getSelection();
-						if (selectionManagerCtrl.isMultiSelect) {
-							if (currentSelections.indexOf(selectedObj) === -1) {
-								currentSelections.push(selectedObj);
-							}
-						} else {
-							currentSelections = selectedObj;
-						}
-						updateSelection(currentSelections);
-					},
-					toggleSelected: function(selectedElement) {
-						selectionManagerCtrl.lastSelectedElement = selectedElement;
-						var selectedIndex = selectionManagerCtrl.allSelectableElements.indexOf(selectedElement);
-						var selectedObj = selectionManagerCtrl.allSelectables[selectedIndex];
-						var currentSelections = selectionManagerCtrl.getSelection();
-						if (selectionManagerCtrl.isMultiSelect) {
-							var indexOfData = currentSelections.indexOf(selectedObj);
-							if (indexOfData === -1) {
-								currentSelections.push(selectedObj);
+					addSelected: function(element, toggleSelection) {
+						var selectedElement = angular.element(element);
+						var selectableCtrl = selectedElement.controller('nzSelectable');
+						if (selectableCtrl) {
+							lastSelectedElement = element;
+							var currentSelections = selectionManagerCtrl.getSelection();
+							var selectedObj = selectableCtrl.getSelectionObject();
+							if (isMultiSelect) {
+								var indexOfData = currentSelections.indexOf(selectedObj);
+								if (indexOfData === -1) {
+									currentSelections.push(selectedObj);
+								} else if (toggleSelection) {
+									currentSelections.splice(indexOfData,1);
+								}
 							} else {
-								currentSelections.splice(indexOfData,1);
+								if (currentSelections !== selectedObj) {
+									currentSelections = selectedObj;
+								} else if (toggleSelection) {
+									currentSelections = undefined;
+								}
 							}
-						} else {
-							if (currentSelections === selectedObj) {
-								currentSelections = undefined;
-							} else {
-								currentSelections = selectedObj;
-							}
+							updateSelection(currentSelections);
+							selectionManagerCtrl.setSoftSelection(lastSelectedElement);
 						}
-						updateSelection(currentSelections);
 					},
-					selectRangeFromLast: function(selectedElement) {
-						if (selectionManagerCtrl.isMultiSelect && selectionManagerCtrl.lastSelectedElement !== undefined && selectionManagerCtrl.lastSelectedElement !== null) {
-							var lastSelectedElement = selectionManagerCtrl.lastSelectedElement;
-							var lastSelectedIndex = selectionManagerCtrl.allSelectableElements.indexOf(lastSelectedElement);
-							var currectSelectedIndex = selectionManagerCtrl.allSelectableElements.indexOf(selectedElement);
+					rangeSelectFromLast: function(element) {
+						if (!isMultiSelect || !$document[0].contains(lastSelectedElement)) {
+							selectionManagerCtrl.addSelected(element);
+						} else {
+							var selectedElement = angular.element(element);
+							var selectableCtrl = selectedElement.controller('nzSelectable');
+							if (selectableCtrl) {
+								if (lastSelectedElement) {
+									var lastSelectedElemBackup = lastSelectedElement;
 
-							selectionManagerCtrl.clearSelection();
-							var selectedSpan = selectionManagerCtrl.allSelectableElements.slice(Math.min(lastSelectedIndex, currectSelectedIndex), Math.max(lastSelectedIndex, currectSelectedIndex) + 1);
-							selectedSpan.forEach(function(selected) {
-								selectionManagerCtrl.addSelected(selected);
+									selectionManagerCtrl.clearSelection();
+
+									var selectableElems = selectionManagerCtrl.getAllSelectables();
+									var currectSelectedIndex = selectableElems.indexOf(element);
+									var lastSelectedIndex = selectableElems.indexOf(lastSelectedElemBackup);
+
+									var selectedSpan = selectableElems.slice(Math.min(lastSelectedIndex, currectSelectedIndex), Math.max(lastSelectedIndex, currectSelectedIndex) + 1);
+									selectedSpan.forEach(function(selectedElem) {
+										selectedElem = angular.element(selectedElem);
+										selectionManagerCtrl.addSelected(selectedElem);
+									});
+
+									lastSelectedElement = lastSelectedElemBackup;
+									selectionManagerCtrl.setSoftSelection(lastSelectedElement);
+								}
+							}
+						}
+					},
+					getNextSelectableElement: function() {
+						var nextElement = null;
+						var selectableElems = selectionManagerCtrl.getAllSelectables();
+						if (lastSoftSelectedElement && $document[0].contains(lastSoftSelectedElement)) {
+							var currentElementIndex = selectableElems.indexOf(lastSoftSelectedElement);
+							currentElementIndex++;
+							nextElement = selectableElems[currentElementIndex];
+							if (!nextElement) {
+								nextElement = selectableElems[0];
+							}
+						} else {
+							var selectableObjs = selectableElems.map(function(elem) {
+								var elem = angular.element(elem);
+								var selectableCtrl = elem.controller('nzSelectable');
+								if (selectableCtrl) {
+									return selectableCtrl.getSelectionObject();
+								}
 							});
-							selectionManagerCtrl.lastSelectedElement = lastSelectedElement;
+							var currentSelection = selectionManagerCtrl.getSoftSelection();
+
+							var indexOfCurrentSoftSelectedObj = selectableObjs.indexOf(currentSelection);
+							nextElement = selectableElems[indexOfCurrentSoftSelectedObj];
+							if (!nextElement) {
+								nextElement = selectableElems[0];
+							}
+						}
+
+						return nextElement;
+					},
+					getPreviousSelectableElement: function() {
+						var prevElement = null;
+						var selectableElems = selectionManagerCtrl.getAllSelectables();
+						if (lastSoftSelectedElement && $document[0].contains(lastSoftSelectedElement)) {
+							var currentElementIndex = selectableElems.indexOf(lastSoftSelectedElement);
+							currentElementIndex--;
+							prevElement = selectableElems[currentElementIndex];
+							if (!prevElement) {
+								prevElement = selectableElems[selectableElems.length - 1];
+							}
 						} else {
-							selectionManagerCtrl.addSelected(selectedElement);
-						}
-					},
-					getNextSelectableElement: function(currentElement) {
-						var currentElementIndex = selectionManagerCtrl.allSelectableElements.indexOf(currentElement);
-						currentElementIndex++;
-						if (currentElementIndex >= selectionManagerCtrl.allSelectableElements.length) {
-							currentElementIndex = 0;
+							var selectableObjs = selectableElems.map(function(elem) {
+								var elem = angular.element(elem);
+								var selectableCtrl = elem.controller('nzSelectable');
+								if (selectableCtrl) {
+									return selectableCtrl.getSelectionObject();
+								}
+							});
+							var currentSelection = selectionManagerCtrl.getSoftSelection();
+
+							var indexOfCurrentSoftSelectedObj = selectableObjs.indexOf(currentSelection);
+							prevElement = selectableElems[indexOfCurrentSoftSelectedObj];
+							if (!prevElement) {
+								prevElement = selectableElems[selectableElems.length - 1];
+							}
 						}
 
-						return selectionManagerCtrl.allSelectableElements[currentElementIndex];
-					},
-					getPreviousSelectableElement: function(currentElement) {
-						var currentElementIndex = selectionManagerCtrl.allSelectableElements.indexOf(currentElement);
-						currentElementIndex--;
-						if (currentElementIndex < 0) {
-							currentElementIndex = selectionManagerCtrl.allSelectableElements.length - 1;
-						}
-
-						return selectionManagerCtrl.allSelectableElements[currentElementIndex];
+						return prevElement;
 					},
 					clearSelection: function() {
 						var selection = selectionManagerCtrl.getSelection();
@@ -314,59 +400,55 @@
 					}
 				};
 
-				$timeout(function() {
-					if (selectionManagerCtrl.isMultiSelect) {
-						$scope.$watchCollection(
-							selectionManagerCtrl.getSelection,
-							function(newArray, oldArray) {
-								if (!newArray) {newArray = [];}
-								if (!oldArray) {oldArray = [];}
+				if (isMultiSelect) {
+					$scope.$watchCollection(
+						selectionManagerCtrl.getSelection,
+						function(newArray, oldArray) {
+							if (!newArray) {newArray = [];}
+							if (!oldArray) {oldArray = [];}
 
-								var oldArrayIndex = oldArray.length;
-								while(oldArrayIndex--) {
-									var oldItem = oldArray[oldArrayIndex];
-									if (newArray.indexOf(oldItem) === -1) {
-										$scope.$broadcast(onDeselectEvent, oldItem);
-									}
-								}
-
-								var newArrayIndex = newArray.length;
-								while(newArrayIndex--) {
-									var newItem = newArray[newArrayIndex];
-									if (oldArray.indexOf(newItem) === -1) {
-										$scope.$broadcast(onSelectEvent, newItem);
-									}
+							var oldArrayIndex = oldArray.length;
+							while(oldArrayIndex--) {
+								var oldItem = oldArray[oldArrayIndex];
+								if (newArray.indexOf(oldItem) === -1) {
+									$scope.$broadcast(onDeselectEvent, oldItem);
 								}
 							}
-						);
-					} else {
-						$scope.$watch(
-							selectionManagerCtrl.getSelection,
-							function(newVal, oldVal) {
-								$scope.$broadcast(onDeselectEvent, oldVal);
-								$scope.$broadcast(onSelectEvent, newVal);
+
+							var newArrayIndex = newArray.length;
+							while(newArrayIndex--) {
+								var newItem = newArray[newArrayIndex];
+								if (oldArray.indexOf(newItem) === -1) {
+									$scope.$broadcast(onSelectEvent, newItem);
+								}
 							}
-						);
-					}
-					$scope.$watch(
-						selectionManagerCtrl.getSoftSelection,
-						function(newVal, oldVal) {
-							$scope.$broadcast(onSoftDeselectEvent, oldVal);
-							$scope.$broadcast(onSoftSelectEvent, newVal);
 						}
 					);
-				});
+				} else {
+					$scope.$watch(
+						selectionManagerCtrl.getSelection,
+						function(newVal, oldVal) {
+							$scope.$broadcast(onDeselectEvent, oldVal);
+							$scope.$broadcast(onSelectEvent, newVal);
+						}
+					);
+				}
+				$scope.$watch(
+					selectionManagerCtrl.getSoftSelection,
+					function(newVal, oldVal) {
+						$scope.$broadcast(onSoftDeselectEvent, oldVal);
+						$scope.$broadcast(onSoftSelectEvent, newVal);
+					}
+				);
+
 				return selectionManagerCtrl;
 			},
 			compile: function ($element, $attrs) {
 				var directiveName = this.name;
-				var modelLocation = $attrs[directiveName];
-				var parsedModelAttr = $parse(modelLocation);
-				var isMultiSelect = angular.isDefined($attrs.nzMultiSelect);
+
 				return {
 					pre: function (scope, element, attrs, selectionManagerCtrl) {
-						selectionManagerCtrl.isMultiSelect = isMultiSelect;
-						selectionManagerCtrl._locationOfSelection = parsedModelAttr;
+
 					},
 					post: function (scope, element, attrs, selectionManagerCtrl) {
 
@@ -377,7 +459,7 @@
         };
     });
 
-	module.directive('nzSelectionKeyboardNavigation', function ($timeout) {
+	module.directive('nzSelectionKeyboardNavigation', function ($parse) {
 		return {
 			restrict: 'A',
 			require: ['nzSelectionKeyboardNavigation', '^nzSelectionManager'],
@@ -410,14 +492,9 @@
 					pre: function (scope, element, attrs, ctrls) {
 						var nzKeyboardNavigationCtrl =  ctrls[0];
 						var nzSelectionManagerCtrl = ctrls[1];
-/*
-						var originalSetSelect = nzSelectionManagerCtrl.addSelected;
-						nzSelectionManagerCtrl.addSelected = function(selectedElement) {
-							originalSetSelect.call(this, selectedElement);
-							nzKeyboardNavigationCtrl.setSoftSelect(selectedElement);
-						}
-*/
+
 						nzKeyboardNavigationCtrl.hasHorizontalKeyboardNavigation(true);
+						nzSelectionManagerCtrl._locationOfSoftSelection = $parse($attrs.ngModel);
 					},
 					post: function (scope, element, attrs, ctrls) {
 						var nzKeyboardNavigationCtrl =  ctrls[0];
@@ -427,10 +504,7 @@
 						var setSelectionKeyPress = function(event) {
 							// Enter or Space
 							if (event.keyCode === 13 || event.keyCode === 32) {
-								nzSelectionManagerCtrl.clearSelection();
-								var softSelection = nzSelectionManagerCtrl.getSoftSelection();
-								var selectionElem = nzSelectionManagerCtrl.getElementFromObj(softSelection);
-								nzSelectionManagerCtrl.addSelected(selectionElem);
+								nzSelectionManagerCtrl.toggleSoftSelectAsSelected();
 								event.preventDefault();
 								event.stopPropagation();
 							}
@@ -438,18 +512,14 @@
 						var horizontalNavigarionKeyPress = function(event) {
 							if (event.keyCode === 38) {
 								// key up
-								var softSelection = nzSelectionManagerCtrl.getSoftSelection();
-								var selectionElem = nzSelectionManagerCtrl.getElementFromObj(softSelection);
-								var prevElement = nzSelectionManagerCtrl.getPreviousSelectableElement(selectionElem);
+								var prevElement = nzSelectionManagerCtrl.getPreviousSelectableElement();
 								nzSelectionManagerCtrl.setSoftSelection(prevElement);
 								event.preventDefault();
 								event.stopPropagation();
 							}
 							if (event.keyCode === 40) {
 								// key down
-								var softSelection = nzSelectionManagerCtrl.getSoftSelection();
-								var selectionElem = nzSelectionManagerCtrl.getElementFromObj(softSelection);
-								var nextElement = nzSelectionManagerCtrl.getNextSelectableElement(selectionElem);
+								var nextElement = nzSelectionManagerCtrl.getNextSelectableElement();
 								nzSelectionManagerCtrl.setSoftSelection(nextElement);
 								event.preventDefault();
 								event.stopPropagation();
