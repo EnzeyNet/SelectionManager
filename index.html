@@ -11,35 +11,86 @@
 				height: 100%;
 				overflow: auto;
 			}
-			.selection {
-				background-color: lightblue;
-			}
-			.selection2 {
-				background-color: blue;
-			}
 			.flyoutLabel {
 				width: 50px;
 			}
+			.selection {
+				background-color: lightblue;
+			}
+			tr,
+			ul li {
+				border: 1px solid rgba(0, 0, 0, 0);
+			}
+			.softSelected {
+				outline: thin dotted black;
+			}
+			table {
+				border-collapse: collapse;
+			}
 		</style>
 
-		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.0-beta.17/angular.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.9/angular.js"></script>
 		<script src="dist/SelectionManager.js"></script>
 		<script src="example.js"></script>
 
 	</head>
 	<body ng-controller="selectionManagerCtrl">
 
-		<div nz-selection-manager="selection" nz-multi-select>
-			<ul ng-repeat="item in itemList">
-				<li nz-selection-class="selection" nz-selectable="item"><span>{{item.text}}</span></li>
+		<div nz-selection-manager ng-model="selection" nz-multi-select tabindex=0>
+			<ul nz-selection-keyboard-navigation>
+				<li nz-selection-class="selection"
+					nz-soft-selection-class="softSelected"
+					nz-selectable="objectItem.name">
+					<span>{{objectItem.name}}</span>
+				</li>
+				<li catch-event ng-repeat="item in colorList"
+					nz-selectable="item">
+					<span>{{item.text}}</span>
+				</li>
+				<li nz-selection-class="selection"
+					nz-selectable="objectItem.age">
+					<span>{{objectItem.age}}</span>
+				</li>
+			</ul>
+			<input nz-selection-keyboard-navigation soft-select-model="softSelect"></input>
+		</div>
+
+		<ul>
+			<li ng-repeat="item in items" >
+				<span>{{item}}</span>
+			</li>
+		</ul>
+
+		<input></input>
+		<div>
+			<p>Soft-Select</p>
+			<ul>
+				<li>{{softSelect}}</li>
+			</ul>
+			<p>Multi-Selection</p>
+			<ul ng-repeat="item in selection">
+				<li>{{item}}</li>
+			</ul>
+			<p>Single-Selection</p>
+			<ul>
+				<li>{{selection}}</li>
 			</ul>
 		</div>
 
-			<div>
-				<p>Selection</p>
-				<ul ng-repeat="item in selection">
-					<li>{{item.text}}</li>
-				</ul>
-			</div>
+		<table nz-selection-manager ng-model="citySelection" nz-multi-select>
+			<tbody nz-selection-keyboard-navigation  ng-model="city">
+				<tr ng-repeat="info in cityInfo" nz-selectable="info">
+					<td>{{info.name}}</td>
+					<td>{{info.full_county_name}}</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<div>
+			<p>City Selection</p>
+			<ul ng-repeat="info in citySelection">
+				<li>{{info.name}} ({{info.full_county_name}})</li>
+			</ul>
+		</div>
 	</body>
 </html>
