@@ -495,7 +495,7 @@
 						var nzSelectionManagerCtrl = ctrls[1];
 
 						nzKeyboardNavigationCtrl.hasHorizontalKeyboardNavigation(true);
-						nzSelectionManagerCtrl._locationOfSoftSelection = $parse($attrs.softSelectModel);
+						nzSelectionManagerCtrl._locationOfSoftSelection = angular.isDefined($attrs.softSelectModel) ? $parse($attrs.softSelectModel) : null;
 					},
 					post: function (scope, element, attrs, ctrls) {
 						var nzKeyboardNavigationCtrl =  ctrls[0];
