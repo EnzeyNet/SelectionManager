@@ -5,6 +5,8 @@ Angular directives to manage selection state and applying a class to selected el
 
 Angular Module: net.enzey.selection-manager
 
+Live Example: http://EnzeyNet.github.io/SelectionManager
+
 ### Usage
 * Directives can be on different elements and can span scope hierarchy.
 * All selection directives require nz-selection-manager to be set on a parent DOM element to function.
