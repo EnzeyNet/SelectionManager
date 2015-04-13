@@ -27,6 +27,14 @@
 			table {
 				border-collapse: collapse;
 			}
+			.side-split {
+				display: flex;
+				flex-direction: row;
+				flex-wrap: no-wrap;
+			}
+			.side-split > * {
+				flex: 1 1 50%;
+			}
 		</style>
 
 		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.9/angular.js"></script>
@@ -36,61 +44,62 @@
 	</head>
 	<body ng-controller="selectionManagerCtrl">
 
-		<div nz-selection-manager ng-model="selection" nz-multi-select tabindex=0>
-			<ul nz-selection-keyboard-navigation>
-				<li nz-selection-class="selection"
-					nz-soft-selection-class="softSelected"
-					nz-selectable="objectItem.name">
-					<span>{{objectItem.name}}</span>
-				</li>
-				<li catch-event ng-repeat="item in colorList"
-					nz-selectable="item">
-					<span>{{item.text}}</span>
-				</li>
-				<li nz-selection-class="selection"
-					nz-selectable="objectItem.age">
-					<span>{{objectItem.age}}</span>
-				</li>
-			</ul>
-			<input nz-selection-keyboard-navigation soft-select-model="softSelect"></input>
+		<h2>Data Source Spanning</h2>
+		<div class="side-split">
+			<div nz-selection-manager ng-model="selection" nz-multi-select tabindex=0>
+				<ul nz-selection-keyboard-navigation>
+					<li nz-selection-class="selection"
+						nz-soft-selection-class="softSelected"
+						nz-selectable="objectItem.name">
+						<span>{{objectItem.name}}</span>
+					</li>
+					<li catch-event ng-repeat="item in colorList"
+						nz-selectable="item">
+						<span>{{item.text}}</span>
+					</li>
+					<li nz-selection-class="selection"
+						nz-selectable="objectItem.age">
+						<span>{{objectItem.age}}</span>
+					</li>
+				</ul>
+				<input nz-selection-keyboard-navigation soft-select-model="softSelect"></input>
+			</div>
+			<div>
+				<p>Soft-Select</p>
+				<ul>
+					<li>{{softSelect}}</li>
+				</ul>
+				<p>Multi-Selection</p>
+				<ul ng-repeat="item in selection">
+					<li>{{item}}</li>
+				</ul>
+				<p>Single-Selection</p>
+				<ul>
+					<li>{{selection}}</li>
+				</ul>
+			</div>
 		</div>
 
-		<ul>
-			<li ng-repeat="item in items" >
-				<span>{{item}}</span>
-			</li>
-		</ul>
+		<h2>Filter Selection</h2>
+		<div class="side-split">
+			<div>
+				<input ng-model="cityName"></input>
+				<table nz-selection-manager ng-model="citySelection" nz-multi-select>
+					<tbody nz-selection-keyboard-navigation  ng-model="city">
+						<tr ng-repeat="info in cityInfo | filter: { name: cityName }" nz-selectable="info">
+							<td>{{info.name}}</td>
+							<td>{{info.full_county_name}}</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
 
-		<input></input>
-		<div>
-			<p>Soft-Select</p>
-			<ul>
-				<li>{{softSelect}}</li>
-			</ul>
-			<p>Multi-Selection</p>
-			<ul ng-repeat="item in selection">
-				<li>{{item}}</li>
-			</ul>
-			<p>Single-Selection</p>
-			<ul>
-				<li>{{selection}}</li>
-			</ul>
-		</div>
-
-		<table nz-selection-manager ng-model="citySelection" nz-multi-select>
-			<tbody nz-selection-keyboard-navigation  ng-model="city">
-				<tr ng-repeat="info in cityInfo" nz-selectable="info">
-					<td>{{info.name}}</td>
-					<td>{{info.full_county_name}}</td>
-				</tr>
-			</tbody>
-		</table>
-
-		<div>
-			<p>City Selection</p>
-			<ul ng-repeat="info in citySelection">
-				<li>{{info.name}} ({{info.full_county_name}})</li>
-			</ul>
+			<div>
+				<p>City Selection</p>
+				<ul ng-repeat="info in citySelection">
+					<li>{{info.name}} ({{info.full_county_name}})</li>
+				</ul>
+			</div>
 		</div>
 	</body>
 </html>

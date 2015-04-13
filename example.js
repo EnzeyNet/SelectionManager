@@ -63,6 +63,8 @@
 			color: 'red',
 			age: 31,
 		};
+
+		$scope.cityName = '';
 	});
 
 })(angular);
