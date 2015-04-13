@@ -31,6 +31,7 @@ module.exports = function (grunt) {
 			},
 			dev: {
 				src: [
+					srcdir + '/' + projectName + '.js',
 					srcdir + '/**/*.js'
 				],
 				dest: '<%= distdir %>/<%= projectName %>.js'
