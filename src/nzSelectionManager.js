@@ -7,7 +7,7 @@
 		'net.enzey.selection-manager.keyboard-navigation'
 	]);
 
-    module.directive('nzSelectionManager', function ($parse, $document, $timeout, nzSelectionManagerEvents) {
+    module.directive('nzSelectionManager', function ($parse, $timeout, nzSelectionManagerEvents) {
         return {
 			restrict: 'A',
 			require: 'nzSelectionManager',
@@ -45,7 +45,7 @@
 					return results;
 				};
 				this.toggleSoftSelectAsSelected = function() {
-					if (lastSoftSelectedElement && $document[0].contains(lastSoftSelectedElement)) {
+					if (lastSoftSelectedElement && $element[0].contains(lastSoftSelectedElement)) {
 						ctrl.addSelected(lastSoftSelectedElement, true);
 					}
 				};
@@ -110,7 +110,7 @@
 					}
 				};
 				this.rangeSelectFromLast = function(element) {
-					if (!isMultiSelect || !$document[0].contains(lastSoftSelectedElement)) {
+					if (!isMultiSelect || !$element[0].contains(lastSoftSelectedElement)) {
 						ctrl.addSelected(element);
 					} else {
 						var selectedElement = angular.element(element);
@@ -140,7 +140,7 @@
 				this.getNextSelectableElement = function() {
 					var nextElement = null;
 					var selectableElems = ctrl.getAllSelectables();
-					if (lastSoftSelectedElement && $document[0].contains(lastSoftSelectedElement)) {
+					if (lastSoftSelectedElement && $element[0].contains(lastSoftSelectedElement)) {
 						var currentElementIndex = selectableElems.indexOf(lastSoftSelectedElement);
 						currentElementIndex++;
 						nextElement = selectableElems[currentElementIndex];
@@ -169,7 +169,7 @@
 				this.getPreviousSelectableElement = function() {
 					var prevElement = null;
 					var selectableElems = ctrl.getAllSelectables();
-					if (lastSoftSelectedElement && $document[0].contains(lastSoftSelectedElement)) {
+					if (lastSoftSelectedElement && $element[0].contains(lastSoftSelectedElement)) {
 						var currentElementIndex = selectableElems.indexOf(lastSoftSelectedElement);
 						currentElementIndex--;
 						prevElement = selectableElems[currentElementIndex];
