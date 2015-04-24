@@ -8,9 +8,15 @@
 		var softSelectionClass = null;
 
 		this.setSelectionClass = function(_selectionClass) {
+			if (_selectionClass) {
+				_selectionClass = '' + _selectionClass;
+			}
 			selectionClass = _selectionClass;
 		};
 		this.setSoftSelectionClass = function(_selectionClass) {
+			if (_selectionClass) {
+				_selectionClass = '' + _selectionClass;
+			}
 			softSelectionClass = _selectionClass;
 		};
 
