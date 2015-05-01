@@ -29,7 +29,7 @@ Live Example: http://EnzeyNet.github.io/SelectionManager
 ## Example Usage
 
 ### Using classes directly
-```
+```html
 <ul nz-selection-manager="mySelection">
   <li nz-selection-class="selectedItem" ng-repeat="item in myStuff">
     <span nz-selectable="item">{{item.name}}</span>
@@ -37,13 +37,16 @@ Live Example: http://EnzeyNet.github.io/SelectionManager
 </ul>
 ```
 
-### Using classes set in config
-```
+### Setting classes in config
+```javascript
 module.config(function(nzSelectionManagerConfigProvider) {
 	nzSelectionManagerConfigProvider.setSoftSelectionClass('softSelected');
 	nzSelectionManagerConfigProvider.setSelectionClass('selection');
 });
+```
 
+### Using classes set in config
+```html
 <ul nz-selection-manager="mySelection">
   <li nz-selection-class nz-soft-selection-class ng-repeat="item in myStuff">
     <span nz-selectable="item">{{item.name}}</span>
@@ -52,12 +55,7 @@ module.config(function(nzSelectionManagerConfigProvider) {
 ```
 
 ### Implying selection classes, on same element as nz-selectable
-```
-module.config(function(nzSelectionManagerConfigProvider) {
-	nzSelectionManagerConfigProvider.setSoftSelectionClass('softSelected');
-	nzSelectionManagerConfigProvider.setSelectionClass('selection');
-});
-
+```html
 <ul nz-selection-manager="mySelection">
   <li ng-repeat="item in myStuff" nz-selectable="item">
     <span>{{item.name}}</span>
@@ -66,7 +64,7 @@ module.config(function(nzSelectionManagerConfigProvider) {
 ```
 
 ### Spanning multiple collections
-```
+```html
 <ul nz-selection-manager="mySelection">
   <li nz-selectable="'Hard Coded'">
     <span>Hard Coded</span>
@@ -84,6 +82,6 @@ module.config(function(nzSelectionManagerConfigProvider) {
 ```
 
 Alternatively nz-selectable can also be an element within a model.
-```
+```html
 <span nz-selectable="item.name">{{item.name}}</span>
 ```
