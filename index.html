@@ -35,9 +35,18 @@
 			.side-split > * {
 				flex: 1 1 50%;
 			}
+			.side-split-3 {
+				display: flex;
+				flex-direction: row;
+				flex-wrap: no-wrap;
+			}
+			.side-split-3 > * {
+				flex: 1 1 33%;
+			}
 		</style>
 
 		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.9/angular.js"></script>
+		<script src="http://enzeynet.github.io/VirtualScroll/dist/VirtualScroll.js"></script>
 		<script src="dist/SelectionManager.js"></script>
 		<script src="example.js"></script>
 
@@ -45,7 +54,7 @@
 	<body ng-controller="selectionManagerCtrl">
 
 		<h2>Data Source Spanning</h2>
-		<div class="side-split">
+		<div class="side-split" ng-controller="blank">
 			<div nz-selection-manager ng-model="selection" nz-multi-select tabindex=0>
 				<ul nz-selection-keyboard-navigation>
 					<li nz-selection-class="selection"
@@ -73,25 +82,22 @@
 				<ul ng-repeat="item in selection">
 					<li>{{item}}</li>
 				</ul>
-				<p>Single-Selection</p>
-				<ul>
-					<li>{{selection}}</li>
-				</ul>
 			</div>
 		</div>
 
-		<h2>Filter Selection</h2>
+		<h2>Virtual Scroll & Selection</h2>
 		<div class="side-split">
 			<div>
-				<input ng-model="cityName"></input>
+				<div style="height: 50vh; overflow: auto">
 				<table nz-selection-manager ng-model="citySelection" nz-multi-select>
-					<tbody nz-selection-keyboard-navigation  ng-model="city">
-						<tr ng-repeat="info in cityInfo | filter: { name: cityName }" nz-selectable="info">
+					<tbody nz-selection-keyboard-navigation  soft-select-model="city">
+						<tr ng-repeat="info in cityInfo" nz-selectable="info"  nz-vs>
 							<td>{{info.name}}</td>
 							<td>{{info.full_county_name}}</td>
 						</tr>
 					</tbody>
 				</table>
+				</div>
 			</div>
 
 			<div>
@@ -99,7 +105,43 @@
 				<ul ng-repeat="info in citySelection">
 					<li>{{info.name}} ({{info.full_county_name}})</li>
 				</ul>
+				<p>Soft-Select</p>
+				<ul>
+					<li>{{city}}</li>
+				</ul>
 			</div>
 		</div>
+
+		<h2>Selecting Selections</h2>
+		<div class="side-split-3" ng-controller="blank">
+			<div nz-selection-manager ng-model="$parent.selectionGroup1" nz-multi-select nz-multi-select ng-controller="blank">
+				<h4>colorList (selectionGroup1)</h4>
+				<ul>
+					<li catch-event ng-repeat="item in colorList"
+						nz-selectable="item">
+						<span>{{item.text}}</span>
+					</li>
+				</ul>
+			</div>
+			<div nz-selection-manager ng-model="$parent.selectionGroup2" nz-multi-select nz-multi-select ng-controller="blank">
+				<h4>Selection in colorList (selectionGroup2)</h4>
+				<ul>
+					<li catch-event ng-repeat="item in $parent.selectionGroup1"
+						nz-selectable="item">
+						<span>{{item.text}}</span>
+					</li>
+				</ul>
+			</div>
+			<div nz-selection-manager ng-model="$parent.selectionGroup3" nz-multi-select nz-multi-select ng-controller="blank">
+				<h4>Selection in selectionGroup2 (selectionGroup3)</h4>
+				<ul>
+					<li catch-event ng-repeat="item in $parent.selectionGroup2"
+						nz-selectable="item">
+						<span>{{item.text}}</span>
+					</li>
+				</ul>
+			</div>
+		</div>
+
 	</body>
 </html>

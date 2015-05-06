@@ -3,9 +3,14 @@
 
 	var module = angular.module('net.enzey.example',
 		[
-			'net.enzey.selection-manager'
+			'net.enzey.selection-manager',
+			'net.enzey.virtual-scroll',
 		]
 	);
+
+	module.controller('blank', function() {
+		
+	});
 
 	// https://www.sba.gov/about-sba/sba_performance/sba_data_store/web_service_api/u_s_city_and_county_web_data_api#city-county-state
 	module.service('TestDataSets', function($http, $q) {
